@@ -1,0 +1,28 @@
+{
+    extension_dir: ext
+    initial_extensions: [
+        help
+        extutil
+        airing
+        events
+    ]
+
+    superusers: [
+        0 // Discord IDs of all users who should get eval/exec access
+    ]
+
+    announcements: {
+        airing: {
+            channel: 0 // Channel ID for anime announcements
+        }
+
+        events: {
+            channel: 0 // Channel ID for events announcements
+            minutes_ahead: 20
+        }
+    }
+
+    tokens: {
+        main: '<your token here>'
+    }
+}
