@@ -16,12 +16,13 @@ Use the `help` command to list available commands, or `_help` to list all comman
 This bot requires Python 3.6+, as well as the following dependencies:
 	[`discord.py`](https://pypi.org/project/discord.py/)
 	[`hjson`](https://pypi.org/project/hjson/)
+	[`feedparser`](https://pypi.org/project/feedparser/)
 
 Optionally, you can install [`cchardet`](https://pypi.org/project/cchardet/) and [`aiodns`](https://pypi.org/project/aiodns/) to improve performance.
 ```sh
 # Install dependencies
 # Note: You might need to use 'sudo -H' to get proper permission
-$ python3 -m pip install -U discord.py hjson
+$ python3 -m pip install -U discord.py hjson feedparser
 $ python3 -m pip install -U cchardet aiodns
 
 # Clone repo
