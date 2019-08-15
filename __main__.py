@@ -6,7 +6,7 @@ import contextlib
 
 from . import mixins
 from .common import *
-from .th8asnakes import Th8aSnakes
+from .bot import NearlyOnTime
 
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -17,7 +17,7 @@ with open('config.hjson') as f:
 sys.path.append(os.path.join(os.getcwd(), conf.extension_dir))
 
 if len(sys.argv) != 2:
-    print('Usage: python3 -m th8asnakes <account>')
+    print('Usage: python3 -m nearly_on_time <account>')
     sys.exit(1)
 
 chosen_account = sys.argv[1]
@@ -43,5 +43,5 @@ def log(name, level):
         hdlr.close()
 
 with log('discord', logging.WARNING), log('bot', logging.INFO):
-    bot = Th8aSnakes(conf)
+    bot = NearlyOnTime(conf)
     bot.run(conf.tokens[chosen_account])

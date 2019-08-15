@@ -1,4 +1,4 @@
-# Th8aSnakes (Working Title - TODO: FIX THIS)
+# NearlyOnTime
 
 A Discord bot for the NearlyOnRed Discord server.
 It announces new anime episodes and events on Th8as website.
@@ -6,7 +6,7 @@ It announces new anime episodes and events on Th8as website.
 ## Usage
 To use the bot, mention it with your command.
 
-```@<bot name> help```
+```@NearlyOnTime help```
 
 In direct messages the mention is optional.
 
@@ -26,10 +26,10 @@ $ python3 -m pip install -U discord.py hjson feedparser
 $ python3 -m pip install -U cchardet aiodns
 
 # Clone repo
-$ git clone https://github.com/max-kamps/th8a-snakes.git
+$ git clone https://github.com/max-kamps/nearly-on-time.git nearly_on_time
 
 # Create the config file
-$ cd th8a-snakes
+$ cd nearly-on-time
 $ cp example.config.hjson config.hjson
 
 # Make sure to edit your config file
@@ -37,10 +37,10 @@ $ cp example.config.hjson config.hjson
 
 # Running
 $ cd ..
-$ python3 -m th8a-snakes main
+$ python3 -m nearly_on_time main
 ```
 
 ## Running
 ```sh
-$ python3 -m th8a-snakes <account>
+$ python3 -m nearly_on_time <account>
 ```

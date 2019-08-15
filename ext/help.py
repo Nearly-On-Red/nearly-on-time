@@ -29,7 +29,7 @@ class HelpCog(cmd.Cog):
         commands.sort(key=lambda c: c.name != 'help')
 
         embed = discord.Embed(colour=getattr(ctx.me, 'color', 0), description='\n'.join(cmd_str(c) for c in commands))
-        embed.set_author(name="Th8aSnakes", url="https://github.com/max-kamps/th8a-snakes", icon_url=ctx.me.avatar_url)
+        embed.set_author(name="NearlyOnTime", url="https://github.com/max-kamps/nearly-on-time", icon_url=ctx.me.avatar_url)
 
         await ctx.send(embed=embed)
 
@@ -42,7 +42,7 @@ class HelpCog(cmd.Cog):
         commands.sort(key=lambda c: c.name != 'help')
 
         embed = discord.Embed(colour=getattr(ctx.me, 'color', 0), description='\n'.join(cmd_str_debug(c) for c in commands))
-        embed.set_author(name="Th8aSnakes", url="https://github.com/max-kamps/th8a-snakes", icon_url=ctx.me.avatar_url)
+        embed.set_author(name="NearlyOnTime", url="https://github.com/max-kamps/nearly-on-time", icon_url=ctx.me.avatar_url)
 
         await ctx.send(embed=embed)
 

@@ -15,7 +15,7 @@ log = logging.getLogger('bot')
 # Here we only implement the eval, exec and uptime commands, as well as the mention matching.
 # TODO: It might be nice to move these to a "core" cog that can be reloaded. ~hmry (2019-08-14, 02:20)
 
-class Th8aSnakes(cmd.Bot):
+class NearlyOnTime(cmd.Bot):
     def __init__(self, conf):
         super().__init__(command_prefix='', description='', pm_help=False, help_attrs={})
 
