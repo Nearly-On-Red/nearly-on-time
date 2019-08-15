@@ -14,8 +14,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 with open('config.hjson') as f:
     conf = hjson.load(f, object_hook=Obj, object_pairs_hook=None)
 
-sys.path.append(os.path.join(os.getcwd(), conf.extension_dir))
-
 if len(sys.argv) != 2:
     print('Usage: python3 -m nearly_on_time <account>')
     sys.exit(1)

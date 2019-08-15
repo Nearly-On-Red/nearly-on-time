@@ -1,10 +1,7 @@
 {
-    extension_dir: ext
-    initial_extensions: [
+    initial_modules: [
         help
-        extutil
-        airing
-        events
+        modutil
     ]
 
     superusers: [

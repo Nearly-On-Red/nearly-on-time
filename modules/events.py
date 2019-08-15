@@ -1,13 +1,13 @@
-import re
-import traceback as tb
+# TODO Don't forget to remove this ~hmry (2019-08-16, 01:11)
+raise NotImplementedError("The events module isn't functional yet.")
+
 from datetime import datetime
-from collections import namedtuple
 
 import discord
-import discord.ext.commands as cmd
 from dateutil import tz
 
-from helper.common import *
+from ..common import *
+from .. import module as mod
 
 
 nl = '\n'
@@ -28,13 +28,13 @@ class Event:
         return f'({self.title} @ {self.location} @ {self.start_time} - {self.end_time})'
 
 
-class EventsCog(cmd.Cog):
+class EventsModule(mod.Module):
     def __init__(self, bot):
         self.bot = bot
         self.events = []
         self.reload_events()
 
-    @cmd.group(name='events', invoke_without_command=True)
+    @mod.group(name='events', invoke_without_command=True)
     @is_superuser()
     async def events_cmd(self, ctx):
         await ctx.send(content="__***Upcoming Events:***__")
@@ -59,8 +59,8 @@ class EventsCog(cmd.Cog):
         self.reload_events()
 
     def reload_events(self):
-        # www.nearlyonred.com/events/list/?ical=1&tribe_display=custom&start_date=2019&end_date=2100
-        ical = open('/home/max/Downloads/events.ics').read()
+        # TODO Get the info from the export plugin ~hmry (2019-08-16, 01:11)
+        # ical = www.nearlyonred.com/events/list/?ical=1&tribe_display=custom&start_date=2019&end_date=2100
 
         ical_elements = [tuple(line.split(':', maxsplit=1)) for line in ical.split('\n')]
 
@@ -94,8 +94,3 @@ class EventsCog(cmd.Cog):
 
             elif k == 'LOCATION':
                 curr_event.location = v
-
-
-def setup(bot):
-    cog = EventsCog(bot)
-    bot.add_cog(cog)

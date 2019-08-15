@@ -8,6 +8,7 @@ import discord.ext.commands as cmd
 from discord.ext.commands.view import StringView
 
 from .common import *
+from .module import get_module_class
 
 log = logging.getLogger('bot')
 
@@ -28,6 +29,8 @@ class NearlyOnTime(cmd.Bot):
 
         self.command_regex = None
         self.command_dms_regex = None
+
+        self.modules = {}
 
         # Utility functions for eval/exec
         # TODO: This is pretty ugly, we should probably move these outside of __init__ ~hmry (2019-08-14, 02:28)
@@ -100,15 +103,32 @@ class NearlyOnTime(cmd.Bot):
         async def cmd_times(ctx):
             await ctx.send(f'```prolog\nFirst Ready: {self.first_ready}\nLast Ready:  {self.last_ready}\nLast Resume: {self.last_resume}\nUptime:      {datetime.datetime.utcnow() - self.first_ready}```')
 
-        # Loading initial extensions
+        # Loading initial modules
 
-        for ext in conf.initial_extensions:
+        for mod in conf.initial_modules:
             try:
-                self.load_extension(ext)
+                self.load_module(mod)
+
             except:
-                log.exception(f'Failed to load extension {ext!r} on startup')
+                log.exception(f'Failed to load module {mod!r} on startup')
+                raise
+
             else:
-                log.info(f'Loaded extension {ext!r} on startup')
+                log.info(f'Loaded module {mod!r} on startup')
+
+    def load_module(self, name):
+        C = get_module_class(name)
+
+        if name in self.modules:
+            self.remove_cog(name)
+
+        self.modules[name] = C
+        self.add_cog(C(self))
+
+    def unload_module(self, name):
+        self.remove_cog(name)
+        if name in self.modules:
+            del self.modules[name]
 
     async def on_ready(self):
         log.info(f'Ready with Username {self.user.name!r}, ID {self.user.id!r}')

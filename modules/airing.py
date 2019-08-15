@@ -4,13 +4,12 @@ import logging
 import time
 from datetime import datetime
 
-
-import discord
-from discord.ext import tasks, commands as cmd
 import aiohttp
 import feedparser
+from discord import Embed
 
-from helper.common import *
+from ..common import *
+from .. import module as mod
 
 
 log = logging.getLogger('bot')
@@ -23,7 +22,7 @@ blacklisted_sites = (
 )
 
 
-class AiringCog(cmd.Cog):
+class AiringModule(mod.Module):
     def __init__(self, bot):
         self.bot = bot
         self.session = None
@@ -31,10 +30,10 @@ class AiringCog(cmd.Cog):
 
         self.reload_epsiodes.start()
 
-    def cog_unload(self):
+    def on_unload(self):
         self.reload_epsiodes.stop()
     
-    @tasks.loop(minutes=5)
+    @mod.loop(minutes=5)
     async def reload_epsiodes(self):
         log.info('Reloading episodes')
         # We need to open the session in a coroutine, so we do it here instead of __init__
@@ -76,7 +75,7 @@ class AiringCog(cmd.Cog):
 
         description = f'**{title}** Episode **{number}** just aired!\n\n'
 
-        embed = discord.Embed(
+        embed = Embed(
             title=f'New {title} Episode',
             colour=channel.guild.me.color,
             url=data.data.Media.siteUrl,
@@ -86,8 +85,3 @@ class AiringCog(cmd.Cog):
         embed.set_thumbnail(url=entry.media_thumbnail[0]['url'])
 
         await channel.send(embed=embed)
-
-
-def setup(bot):
-    cog = AiringCog(bot)
-    bot.add_cog(cog)
