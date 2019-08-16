@@ -16,14 +16,8 @@ class HelpModule(mod.Module):
     def __init__(self, bot):
         self.bot = bot
 
-
-    @mod.command(name='hello', hidden=True, usage='hello', description='???')
-    async def cmd_hello(self, ctx):
-        await ctx.send('Hewwo!')
-
-
     @mod.command(name='help', usage='help', description='Show this message')
-    async def cmd_help(self, ctx):
+    async def help_cmd(self, ctx):
         commands = [c for c in ctx.bot.commands if not c.hidden]
         commands.sort(key=lambda c: c.name)
         commands.sort(key=lambda c: c.name != 'help')
@@ -33,10 +27,9 @@ class HelpModule(mod.Module):
 
         await ctx.send(embed=embed)
 
-
     @mod.command(name='_help', hidden=True, usage='_help', description='Show debug information about all commands')
     @is_superuser()
-    async def cmd__help(self, ctx):
+    async def _help_cmd(self, ctx):
         commands = [c for c in ctx.bot.commands]
         commands.sort(key=lambda c: c.name)
         commands.sort(key=lambda c: c.name != 'help')

@@ -11,12 +11,12 @@ class ModUtilModule(mod.Module):
 
     @mod.group(name='modules', hidden=True, invoke_without_command=True)
     @is_superuser()
-    async def cmd_modules(self, ctx):
+    async def modules_cmd(self, ctx):
         await ctx.send(f'```Loaded modules:\n{nl.join(self.bot.modules)}```')
 
-    @cmd_modules.command(name='load')
+    @modules_cmd.command(name='load')
     @is_superuser()
-    async def cmd_load(self, ctx, module: str):
+    async def load_cmd(self, ctx, module: str):
         try:
             self.bot.load_module(module)
         
@@ -27,9 +27,9 @@ class ModUtilModule(mod.Module):
         else:
             await ctx.add_success_reaction(True)
 
-    @cmd_modules.command(name='reload_all')
+    @modules_cmd.command(name='reload_all')
     @is_superuser()
-    async def cmd_reload_all(self, ctx):
+    async def reload_all_cmd(self, ctx):
         for modules in self.bot.modules[:]:
             try:
                 self.bot.load_module(module)
@@ -40,9 +40,9 @@ class ModUtilModule(mod.Module):
 
         await ctx.add_success_reaction(True)
 
-    @cmd_modules.command(name='unload')
+    @modules_cmd.command(name='unload')
     @is_superuser()
-    async def cmd_unload(self, module: str):
+    async def unload_cmd(self, module: str):
         if module not in self.bot.modules:
             await ctx.add_success_reaction(False)
 
