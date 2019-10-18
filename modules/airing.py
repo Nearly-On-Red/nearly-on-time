@@ -57,6 +57,7 @@ class AiringModule(mod.Module):
 
     def on_unload(self):
         self.fetching_task.cancel()
+        self.session.close()
         for ann in self.pending_announcements:
             ann.cancel()
 
