@@ -13,9 +13,6 @@ def cmd_str_debug(c):
 
 
 class HelpModule(mod.Module):
-    def __init__(self, bot):
-        self.bot = bot
-
     @mod.command(name='help', usage='help', description='Show this message')
     async def help_cmd(self, ctx):
         commands = [c for c in ctx.bot.commands if not c.hidden]

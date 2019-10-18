@@ -1,6 +1,7 @@
 # TODO Don't forget to remove this ~hmry (2019-08-16, 01:11)
 raise NotImplementedError("The events module isn't functional yet.")
 
+from collections import namedtuple
 from datetime import datetime
 
 import discord
@@ -10,7 +11,7 @@ from ..common import *
 from .. import module as mod
 
 
-nl = '\n'
+Location = namedtuple('Location', 'url icon_url color')
 locations = {
     'Twitch Channel': ('https://i.imgur.com/DKfwzn4.png', 0x6441a4, 'https://www.twitch.tv/nearlyonred')
 }

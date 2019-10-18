@@ -2,6 +2,10 @@ import discord.ext.commands as cmd
 import textwrap
 
 
+# You can't use escape sequences in f-strings. This makes me sad.
+NEW_LINE = '\n'
+
+
 # TODO: I don't know if this is even used anymore... Remove? ~hmry (2019-08-14, 02:33)
 def reverse_dict(d):
     values = {}
@@ -23,7 +27,7 @@ class Obj(dict):
 
 def is_superuser():
     async def pred(ctx):
-        return await ctx.bot.is_owner(ctx.author) or ctx.message.author.id in ctx.bot.conf.superusers
+        return await ctx.bot.is_owner(ctx.author) or ctx.message.author.id in ctx.bot.conf['superusers']
 
     return cmd.check(pred)
 

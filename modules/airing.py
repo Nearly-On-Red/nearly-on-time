@@ -1,87 +1,125 @@
 import asyncio
 import json
-import logging
-import time
-from datetime import datetime
+from datetime import datetime as dt, timedelta as td
 
 import aiohttp
-import feedparser
-from discord import Embed
 
 from ..common import *
 from .. import module as mod
 
 
-log = logging.getLogger('bot')
-loop = asyncio.get_event_loop()
-
-
-blacklisted_sites = (
-    'Official Site',
-    'Twitter'
-)
+get_airing_query = '''
+query ($show_ids: [Int], $after: Int, $before: Int, $page: Int) {
+  Page(page: $page, perPage: 50) {
+    pageInfo {
+      hasNextPage
+    }
+    airingSchedules(mediaId_in: $show_ids, airingAt_greater: $after, airingAt_lesser: $before, sort: TIME) {
+      media {
+        id
+        title {
+          english
+          romaji
+        }
+        siteUrl
+        externalLinks {
+          site
+          url
+        }
+        coverImage {
+          medium
+          color
+        }
+      }
+      episode
+      airingAt
+    }
+  }
+}
+'''
 
 
 class AiringModule(mod.Module):
-    def __init__(self, bot):
-        self.bot = bot
-        self.session = None
-        self.last_episodes = set()
+    def on_load(self):
+        self.conf.setdefault('channel_id', 0)
+        self.conf.setdefault('blacklisted_sites', {'Official Site', 'Twitter'})
+        self.conf.setdefault('shows', set())
+        self.conf.setdefault('refresh_interval_mins', 5)
+        self.conf.setdefault('announcement_offset_mins_after', 30)
+        self.conf.sync()
 
-        self.reload_epsiodes.start()
+        self.next_check = dt.utcnow()
+        self.session = None
+        self.fetching_task = mod.loop.create_task(self.fetch_upcoming())
+        self.pending_announcements = []
+
+        self.channel = self.bot.get_channel(self.conf['channel_id'])
 
     def on_unload(self):
-        self.reload_epsiodes.stop()
-    
-    @mod.loop(minutes=5)
-    async def reload_epsiodes(self):
-        log.info('Reloading episodes')
-        # We need to open the session in a coroutine, so we do it here instead of __init__
+        self.fetching_task.cancel()
+        for ann in self.pending_announcements:
+            ann.cancel()
+
+    async def fetch_upcoming(self):
+        self.log.info('Reloading episodes...')
+        t_now = self.next_check
+        t_next = t_now + td(minutes=self.conf['refresh_interval_mins'])
+
+        self.next_check = t_next
+
+        # We can only open sessions in a coroutine, so we do it here instead of on_load
         if self.session is None:
             self.session = aiohttp.ClientSession()
-        log.info('Session opened')
+            self.log.info('Session opened')
 
-        async with self.session.get('https://www.livechart.me/feeds/episodes') as response:
-            feed = feedparser.parse(await response.text())
+        page_number = 0
+        while True:
+            async with self.session.post('https://graphql.anilist.co', json={
+                'query': get_airing_query,
+                'variables': {
+                  'show_ids': self.conf['shows'],
+                  'after': t_now,
+                  'before': t_next + 1,
+                  'page': page_number
+                }
+            }) as response:
+                resp = json.loads(await response.text(), object_hook=Obj)
+                
+                if 'data' not in resp:
+                    self.log.error('Failed to reload episodes!')
+                    break  # TODO: Try exponential backoff here ~hmry (2019-10-18, 21:24)
 
-        episodes = set()
+                data = resp.data
 
-        for entry in feed.entries:
-            episodes.add(entry.id)
+            for ep in data.airingSchedules:
+                airing_in_seconds = (
+                    dt.utcfromtimestamp(ep.airingAt)
+                    - dt.utcnow()
+                    + td(minutes=self.conf['announcement_offset_mins_after'])
+                ).seconds
 
-            if entry.id in self.last_episodes:
+                mod.loop.call_later(airing_in_seconds, announce_episode(ep))
+
+            if data.hasNextPage:
+                page_number += 1
                 continue
 
-            await self.announce_episode(entry)
+            break
 
-        self.last_episodes = episodes
+        await asyncio.sleep((t_next - dt.utcnow()).seconds)
 
-    async def announce_episode(self, entry):
-        title, number = entry.title.strip().rsplit('#', maxsplit=1)
-        title = title.strip()
-        number = int(number)
-
-        channel = self.bot.get_channel(self.bot.conf.announcements.airing.channel)
-
-        async with self.session.post('https://graphql.anilist.co', json={
-            'query': 'query($name:String){Media(search:$name){siteUrl externalLinks{site url}}}',
-            'variables': {
-                'name': title
-            }
-        }) as response:
-            data = json.loads(await response.text(), object_hook=Obj)
-
-        link_list = [f'[[{link.site}]]({link.url})' for link in data.data.Media.externalLinks if link.site not in blacklisted_sites]
-
-        description = f'**{title}** Episode **{number}** just aired!\n\n'
+    async def announce_episode(self, ep):
+        title = ep.media.title.english
+        number = ep.episode
+        link_list = [f'[[{link.site}]]({link.url})' for link in ep.externalLinks if link.site not in self.conf.blacklisted_sites]
 
         embed = Embed(
             title=f'New {title} Episode',
-            colour=channel.guild.me.color,
+            colour=self.conf['channel'].guild.me.color,
             url=data.data.Media.siteUrl,
-            description=description + ' '.join(link_list),
-            timestamp=datetime.fromtimestamp(time.mktime(entry.published_parsed)))
+            description=f'**{title}** Episode **{number}** just aired!\n\n' + ' '.join(link_list),
+            timestamp=datetime.utcfromtimestamp(ep.airingAt))
 
-        embed.set_thumbnail(url=entry.media_thumbnail[0]['url'])
+        embed.set_thumbnail(url=ep.media.coverImage.medium)
 
-        await channel.send(embed=embed)
+        await self.conf['channel'].send(embed=embed)

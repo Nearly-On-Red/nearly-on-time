@@ -1,4 +1,5 @@
 __pycache__
-config.hjson
+credentials.json
+.config
 .DS_Store
 *.sublime-*

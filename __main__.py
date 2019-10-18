@@ -1,18 +1,19 @@
 import logging
 import sys
 import os
-import hjson
 import contextlib
+import json
 
 from . import mixins
 from .common import *
 from .bot import NearlyOnTime
+from . import persistence
 
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-with open('config.hjson') as f:
-    conf = hjson.load(f, object_hook=Obj, object_pairs_hook=None)
+with open('credentials.json') as f:
+    credentials = json.load(f, object_hook=Obj)
 
 if len(sys.argv) != 2:
     print('Usage: python3 -m nearly_on_time <account>')
@@ -20,8 +21,8 @@ if len(sys.argv) != 2:
 
 chosen_account = sys.argv[1]
 
-if chosen_account not in conf.tokens:
-    print(f'Error: {chosen_account!r} is not a valid account, must be one of {tuple(conf.tokens)!r}.')
+if chosen_account not in credentials:
+    print(f'Error: {chosen_account!r} is not a valid account, must be one of {tuple(credentials)!r}.')
     sys.exit(1)
 
 @contextlib.contextmanager
@@ -39,7 +40,11 @@ def log(name, level):
     for hdlr in l.handlers[:]:
         l.removeHandler(hdlr)
         hdlr.close()
+try:
+    with log('discord', logging.WARNING), log('bot', logging.INFO):
+        bot = NearlyOnTime()
+        bot.run(credentials[chosen_account])
 
-with log('discord', logging.WARNING), log('bot', logging.INFO):
-    bot = NearlyOnTime(conf)
-    bot.run(conf.tokens[chosen_account])
+except:
+    persistence.close_all_shelves()
+    raise

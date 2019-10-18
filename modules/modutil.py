@@ -2,17 +2,11 @@ from ..common import *
 from .. import module as mod
 
 
-nl = '\n'
-
-
 class ModUtilModule(mod.Module):
-    def __init__(self, bot):
-        self.bot = bot
-
     @mod.group(name='modules', hidden=True, invoke_without_command=True)
     @is_superuser()
     async def modules_cmd(self, ctx):
-        await ctx.send(f'```Loaded modules:\n{nl.join(self.bot.modules)}```')
+        await ctx.send(f'```Loaded modules:\n{NEW_LINE.join(self.bot.modules)}```')
 
     @modules_cmd.command(name='load')
     @is_superuser()
