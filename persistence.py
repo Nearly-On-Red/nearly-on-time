@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 config_dir = (Path(__file__).parent / '.config').resolve()
-os.mkdir(config_dir)
+os.makedirs(config_dir, exist_ok=True)
 
 
 opened_shelves = {}
