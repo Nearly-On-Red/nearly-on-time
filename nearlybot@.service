@@ -1,0 +1,15 @@
+[Unit]
+Description=NearyOnTime@'%I' Discord Bot
+After=default.target
+
+[Service]
+WorkingDirectory=/home/nearlybot/
+ExecStart=python3 -m nearly_on_time %I
+Type=idle
+Restart=always
+RestartSec=15
+RestartPreventExitStatus=0
+TimeoutStopSec=10
+
+[Install]
+WantedBy=default.target

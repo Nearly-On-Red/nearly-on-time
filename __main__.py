@@ -3,6 +3,7 @@ import sys
 import os
 import contextlib
 import json
+from pathlib import Path
 
 from . import mixins
 from .common import *
@@ -24,6 +25,10 @@ chosen_account = sys.argv[1]
 if chosen_account not in credentials:
     print(f'Error: {chosen_account!r} is not a valid account, must be one of {tuple(credentials)!r}.')
     sys.exit(1)
+
+config_dir = (Path(__file__).parent / '.config' / chosen_account).resolve()
+os.makedirs(config_dir, exist_ok=True)
+persistence.config_dir = config_dir
 
 @contextlib.contextmanager
 def log(name, level):

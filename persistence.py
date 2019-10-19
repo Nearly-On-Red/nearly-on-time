@@ -1,10 +1,7 @@
 import shelve
-import os
-from pathlib import Path
 
 
-config_dir = (Path(__file__).parent / '.config').resolve()
-os.makedirs(config_dir, exist_ok=True)
+config_dir = None
 
 
 opened_shelves = {}
