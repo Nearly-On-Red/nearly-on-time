@@ -33,7 +33,7 @@ $ python3 -m pip install -U cchardet aiodns
 $ git clone https://github.com/max-kamps/nearly-on-time.git nearly_on_time
 
 # Create the credentials file
-$ cd nearly-on-time
+$ cd nearly_on_time
 $ cp credentials.example.json credentials.hjson
 
 # Make sure to edit the credentials file
