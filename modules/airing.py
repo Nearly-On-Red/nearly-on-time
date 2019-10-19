@@ -109,6 +109,10 @@ class AiringModule(mod.Module):
     async def announce_episode(self, ep):
         title = ep.media.title.english
         number = ep.episode
+        
+        if not self.conf['channel_id']:
+            self.log.warning(f'Announcement for {title} # {number} dropped, no channel selected')
+        
         link_list = [f'[[{link.site}]]({link.url})' for link in ep.externalLinks if link.site not in self.conf.blacklisted_sites]
 
         embed = Embed(
@@ -120,4 +124,4 @@ class AiringModule(mod.Module):
 
         embed.set_thumbnail(url=ep.media.coverImage.medium)
 
-        await self.conf['channel'].send(embed=embed)
+        await self.bot.get_channel(self.conf['channel_id']).send(embed=embed)
