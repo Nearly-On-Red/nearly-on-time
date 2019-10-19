@@ -29,17 +29,25 @@ class Module(cmd.Cog):
         self.bot = bot
         self.conf = persistence.get_module_shelf(self.name)
         self.log = logging.getLogger(f'bot.{self.name}')
-        self.on_load()
+        self._on_load()
 
-    def on_load(self):
-        # This is overridden in subclasses
-        pass
+    def _on_load(self):
+        if hasattr(self, 'on_load'):
+            self.on_load()
+        
+        self.log.info('Loaded!')
+
+    def _on_unload(self):
+        self.conf.sync()
+        if hasattr(self, 'on_unload'):
+            self.on_unload()
+
+        self.log.info('Unloaded!')
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        if hasattr(cls, 'on_unload'):
-            cls.cog_unload = cls.on_unload
+        cls.cog_unload = cls._on_unload
 
 
 def get_module_class(name):
