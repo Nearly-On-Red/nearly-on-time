@@ -45,7 +45,6 @@ class AiringModule(mod.Module):
         self.conf.setdefault('blacklisted_sites', {'Official Site', 'Twitter'})
         self.conf.setdefault('shows', set())
         self.conf.setdefault('refresh_interval_mins', 5)
-        self.conf.setdefault('announcement_offset_mins_after', 30)
         self.conf.sync()
 
         self.next_check = dt.utcnow()
@@ -94,9 +93,7 @@ class AiringModule(mod.Module):
 
             for ep in data.airingSchedules:
                 airing_in_seconds = (
-                    dt.utcfromtimestamp(ep.airingAt)
-                    - dt.utcnow()
-                    + td(minutes=self.conf['announcement_offset_mins_after'])
+                    dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()
                 ).seconds
 
                 mod.loop.call_later(airing_in_seconds, announce_episode(ep))
