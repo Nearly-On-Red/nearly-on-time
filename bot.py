@@ -39,9 +39,7 @@ class NearlyOnTime(cmd.Bot):
         self.modules = {}
 
         # The core module should always be loaded, so we can use eval to repair misconfigurations
-        self.load_module('core')
-
-        for module in self.conf['active_modules']:
+        for module in {'core', *self.conf['active_modules']}:
             self.load_module(module)
 
     def load_module(self, name):
