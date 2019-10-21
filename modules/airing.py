@@ -1,5 +1,6 @@
 import asyncio
 import json
+import traceback
 from datetime import datetime as dt, timedelta as td
 
 import aiohttp
@@ -49,64 +50,84 @@ class AiringModule(mod.Module):
 
         self.next_check = dt.utcnow()
         self.session = None
-        self.fetching_task = mod.loop.create_task(self.fetch_upcoming())
+        self.fetching_task = mod.loop.create_task(self.fetch_continuously())
         self.pending_announcements = []
 
         self.channel = self.bot.get_channel(self.conf['channel_id'])
 
     def on_unload(self):
         self.fetching_task.cancel()
-        self.log.info('Closing session...')
-        mod.loop.create_task(self.session.close())
+        
+        if self.session:
+            self.log.info('Closing session...')
+            mod.loop.create_task(self.session.close())
+        
         for ann in self.pending_announcements:
             ann.cancel()
 
-    async def fetch_upcoming(self):
+    async def make_airing_query_request(self, after, before, page):
+        self.log.info(f'Fetching episodes from {after} to {before}...')
+        async with self.session.post('https://graphql.anilist.co', json={
+            'query': get_airing_query,
+            'variables': {
+              'show_ids': list(self.conf['shows']),
+              'after': int(dt.timestamp(after)),
+              'before': int(dt.timestamp(before)) - 1,
+              'page': page
+            }
+        }, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            resp = json.loads(await response.text(), object_hook=Obj)
+            # TODO: Handle http errors here? ~hmry (2019-10-21, 16:05)
+
+            if (
+                'data' not in resp or resp.data is None
+                or 'errors' in resp and resp.errors not in (None, [])
+            ):
+                self.log.error(f'Failed to reload episodes! {resp}')
+                # TODO: Try exponential backoff here? ~hmry (2019-10-18, 21:24)
+
+            return resp.data.Page
+
+    async def fetch_upcoming_episodes(self):
+        from_t = self.next_check
+        to_t = dt.utcnow() + td(minutes=self.conf['refresh_interval_mins'])
+
+        self.next_check = to_t
+
+        
+        # We can only open sessions in a coroutine, so we do it here instead of on_load
+        if self.session is None:
+            self.session = aiohttp.ClientSession()
+            self.log.info('Session opened')
+
+        page_number = 0
         while True:
-            self.log.info('Reloading episodes...')
-            t_now = self.next_check
-            t_next = t_now + td(minutes=self.conf['refresh_interval_mins'])
+            data = await self.make_airing_query_request(after=from_t, before=to_t, page=page_number)
+            self.log.info(data)
 
-            self.next_check = t_next
+            for ep in data.airingSchedules:
+                airing_in_seconds = (
+                    dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()
+                ).seconds
 
-            # We can only open sessions in a coroutine, so we do it here instead of on_load
-            if self.session is None:
-                self.session = aiohttp.ClientSession()
-                self.log.info('Session opened')
+                self.pending_announcements.append(mod.loop.call_later(airing_in_seconds, announce_episode(ep)))
 
-            page_number = 0
-            while True:
-                async with self.session.post('https://graphql.anilist.co', json={
-                    'query': get_airing_query,
-                    'variables': {
-                      'show_ids': self.conf['shows'],
-                      'after': t_now,
-                      'before': t_next + 1,
-                      'page': page_number
-                    }
-                }) as response:
-                    resp = json.loads(await response.text(), object_hook=Obj)
-                    
-                    if 'data' not in resp:
-                        self.log.error('Failed to reload episodes!')
-                        break  # TODO: Try exponential backoff here ~hmry (2019-10-18, 21:24)
-
-                    data = resp.data
-
-                for ep in data.airingSchedules:
-                    airing_in_seconds = (
-                        dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()
-                    ).seconds
-
-                    self.pending_announcements.append(mod.loop.call_later(airing_in_seconds, announce_episode(ep)))
-
-                if data.hasNextPage:
-                    page_number += 1
-                    continue
-
+            if not data.pageInfo.hasNextPage:
                 break
+            
+            page_number += 1
 
-            await asyncio.sleep((t_next - dt.utcnow()).seconds)
+    async def fetch_continuously(self):
+        while True:
+            try:
+                await self.fetch_upcoming_episodes()
+            
+            except Exception:
+                traceback.print_exc()
+    
+            sleep_duration = (self.next_check - dt.utcnow()).total_seconds()
+            self.log.info(f'Sleeping for {sleep_duration} seconds')
+            await asyncio.sleep(sleep_duration)
 
     async def announce_episode(self, ep):
         title = ep.media.title.english
