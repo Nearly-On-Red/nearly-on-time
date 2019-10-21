@@ -4,7 +4,7 @@ After=default.target
 
 [Service]
 WorkingDirectory=/home/nearlybot/
-ExecStart=python3 -m nearly_on_time %I
+ExecStart=python3 -u -m nearly_on_time %I
 Type=idle
 Restart=always
 RestartSec=15
