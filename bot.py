@@ -111,7 +111,7 @@ class NearlyOnTime(cmd.Bot):
 
     async def close(self):
         log.info('Closing...')
-        super().close()
+        await super().close()
 
         for mod in self.modules:
-            self.unload_module(mod.name)
+            self.unload_module(mod)
