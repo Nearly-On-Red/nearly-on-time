@@ -23,7 +23,7 @@ class ConfUtilModule(mod.Module):
 
     @config_cmd.command(name='set')
     @is_superuser()
-    async def set_cmd(self, ctx, module: str, key: str, value):
+    async def set_cmd(self, ctx, module: str, key: str, *, value):
         if module not in self.bot.modules:
             await ctx.add_success_reaction(False)
             await ctx.send(f"Module {module!r} is not loaded.")
