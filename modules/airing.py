@@ -62,50 +62,51 @@ class AiringModule(mod.Module):
             ann.cancel()
 
     async def fetch_upcoming(self):
-        self.log.info('Reloading episodes...')
-        t_now = self.next_check
-        t_next = t_now + td(minutes=self.conf['refresh_interval_mins'])
-
-        self.next_check = t_next
-
-        # We can only open sessions in a coroutine, so we do it here instead of on_load
-        if self.session is None:
-            self.session = aiohttp.ClientSession()
-            self.log.info('Session opened')
-
-        page_number = 0
         while True:
-            async with self.session.post('https://graphql.anilist.co', json={
-                'query': get_airing_query,
-                'variables': {
-                  'show_ids': self.conf['shows'],
-                  'after': t_now,
-                  'before': t_next + 1,
-                  'page': page_number
-                }
-            }) as response:
-                resp = json.loads(await response.text(), object_hook=Obj)
-                
-                if 'data' not in resp:
-                    self.log.error('Failed to reload episodes!')
-                    break  # TODO: Try exponential backoff here ~hmry (2019-10-18, 21:24)
+            self.log.info('Reloading episodes...')
+            t_now = self.next_check
+            t_next = t_now + td(minutes=self.conf['refresh_interval_mins'])
 
-                data = resp.data
+            self.next_check = t_next
 
-            for ep in data.airingSchedules:
-                airing_in_seconds = (
-                    dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()
-                ).seconds
+            # We can only open sessions in a coroutine, so we do it here instead of on_load
+            if self.session is None:
+                self.session = aiohttp.ClientSession()
+                self.log.info('Session opened')
 
-                self.pending_announcements.append(mod.loop.call_later(airing_in_seconds, announce_episode(ep)))
+            page_number = 0
+            while True:
+                async with self.session.post('https://graphql.anilist.co', json={
+                    'query': get_airing_query,
+                    'variables': {
+                      'show_ids': self.conf['shows'],
+                      'after': t_now,
+                      'before': t_next + 1,
+                      'page': page_number
+                    }
+                }) as response:
+                    resp = json.loads(await response.text(), object_hook=Obj)
+                    
+                    if 'data' not in resp:
+                        self.log.error('Failed to reload episodes!')
+                        break  # TODO: Try exponential backoff here ~hmry (2019-10-18, 21:24)
 
-            if data.hasNextPage:
-                page_number += 1
-                continue
+                    data = resp.data
 
-            break
+                for ep in data.airingSchedules:
+                    airing_in_seconds = (
+                        dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()
+                    ).seconds
 
-        await asyncio.sleep((t_next - dt.utcnow()).seconds)
+                    self.pending_announcements.append(mod.loop.call_later(airing_in_seconds, announce_episode(ep)))
+
+                if data.hasNextPage:
+                    page_number += 1
+                    continue
+
+                break
+
+            await asyncio.sleep((t_next - dt.utcnow()).seconds)
 
     async def announce_episode(self, ep):
         title = ep.media.title.english
