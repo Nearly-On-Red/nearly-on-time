@@ -109,3 +109,9 @@ class NearlyOnTime(cmd.Bot):
         ctx.command = self.all_commands.get(invoker)
         return ctx
 
+    async def close(self):
+        log.info('Closing...')
+        super().close()
+
+        for mod in self.modules:
+            self.unload_module(mod.name)
