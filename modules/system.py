@@ -21,4 +21,4 @@ class SystemModule(mod.Module):
         # the program anyway.
         # I tried using subprocess here, but it didn't work.
         # ~hmry (2019-10-21, 02:12)
-        os.system('systemctl --user restart ' + quote(f'nearlybot@{bot.profile}'))
+        os.system('systemctl --user restart ' + quote(f'nearlybot@{self.bot.profile}'))
