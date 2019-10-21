@@ -43,7 +43,7 @@ class NearlyOnTime(cmd.Bot):
         for module in {'core', *self.conf['active_modules']}:
             self.load_module(module)
 
-    def load_module(self, name):
+    def load_module(self, name, persistent=True):
         C = get_module_class(name)
 
         if name in self.modules:
@@ -52,13 +52,17 @@ class NearlyOnTime(cmd.Bot):
         instance = C(self)
         self.modules[name] = instance
         self.add_cog(instance)
-        self.conf['active_modules'].add(name)
-        self.conf.sync()
 
-    def unload_module(self, name):
+        if persistent:
+            self.conf['active_modules'].add(name)
+            self.conf.sync()
+
+    def unload_module(self, name, persistent=True):
         self.remove_cog(name)
         if name in self.modules:
             del self.modules[name]
+        
+        if persistent:
             self.conf['active_modules'].discard(name)
             self.conf.sync()
 
@@ -114,4 +118,4 @@ class NearlyOnTime(cmd.Bot):
         await super().close()
 
         for mod in self.modules.copy():
-            self.unload_module(mod)
+            self.unload_module(mod, persistent=False)
