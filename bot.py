@@ -113,5 +113,5 @@ class NearlyOnTime(cmd.Bot):
         log.info('Closing...')
         await super().close()
 
-        for mod in self.modules:
+        for mod in self.modules.copy():
             self.unload_module(mod)
