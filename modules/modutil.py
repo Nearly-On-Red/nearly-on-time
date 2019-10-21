@@ -36,7 +36,7 @@ class ModUtilModule(mod.Module):
 
     @modules_cmd.command(name='unload')
     @is_superuser()
-    async def unload_cmd(self, module: str):
+    async def unload_cmd(self, ctx, module: str):
         if module not in self.bot.modules:
             await ctx.add_success_reaction(False)
             return
