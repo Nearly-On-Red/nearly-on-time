@@ -59,7 +59,7 @@ class NearlyOnTime(cmd.Bot):
         self.remove_cog(name)
         if name in self.modules:
             del self.modules[name]
-            self.conf['active_modules'].delete(name)
+            self.conf['active_modules'].discard(name)
             self.conf.sync()
 
     async def on_ready(self):
