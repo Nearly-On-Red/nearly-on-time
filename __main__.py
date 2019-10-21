@@ -50,6 +50,6 @@ with logger('discord', logging.WARNING), logger('bot', logging.INFO) as log:
     os.makedirs(config_dir, exist_ok=True)
     persistence.config_dir = config_dir
 
-    bot = NearlyOnTime()
+    bot = NearlyOnTime(chosen_account)
     bot.run(credentials[chosen_account])
     persistence.close_all_shelves()

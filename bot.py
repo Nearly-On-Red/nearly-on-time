@@ -13,7 +13,7 @@ log = logging.getLogger('bot')
 
 
 class NearlyOnTime(cmd.Bot):
-    def __init__(self):
+    def __init__(self, profile):
         super().__init__(command_prefix='', description='', pm_help=False, help_attrs={})
 
         super().remove_command('help')
@@ -28,6 +28,7 @@ class NearlyOnTime(cmd.Bot):
         conf.setdefault('active_modules', set())
         conf.sync()
 
+        self.profile = profile
         self.conf = conf
         self.first_ready = None
         self.last_ready = None
