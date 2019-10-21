@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime as dt, timedelta as td
 
 import aiohttp
+from discord import Embed
 
 from ..common import *
 from .. import module as mod
@@ -130,21 +131,24 @@ class AiringModule(mod.Module):
             await asyncio.sleep(sleep_duration)
 
     async def announce_episode(self, ep):
-        title = ep.media.title.english
+        channel = self.bot.get_channel(self.conf['channel_id'])
+        
+        if not channel:
+            self.log.warning(f'Announcement for {title} # {number} dropped, invalid channel {self.conf["channel_id"]}')
+
+        anime = ep.media
+        title = anime.title.english or anime.title.romaji
         number = ep.episode
-        
-        if not self.conf['channel_id']:
-            self.log.warning(f'Announcement for {title} # {number} dropped, no channel selected')
-        
-        link_list = [f'[[{link.site}]]({link.url})' for link in ep.externalLinks if link.site not in self.conf.blacklisted_sites]
+
+        link_list = [f'[[{link.site}]]({link.url})' for link in anime.externalLinks if link.site not in self.conf['blacklisted_sites']]
 
         embed = Embed(
             title=f'New {title} Episode',
-            colour=self.conf['channel'].guild.me.color,
-            url=data.data.Media.siteUrl,
+            colour=channel.guild.me.color,
+            url=anime.siteUrl,
             description=f'**{title}** Episode **{number}** just aired!\n\n' + ' '.join(link_list),
-            timestamp=datetime.utcfromtimestamp(ep.airingAt))
+            timestamp=dt.utcfromtimestamp(ep.airingAt))
 
-        embed.set_thumbnail(url=ep.media.coverImage.medium)
+        embed.set_thumbnail(url=anime.coverImage.medium)
 
-        await self.bot.get_channel(self.conf['channel_id']).send(embed=embed)
+        await channel.send(embed=embed)
