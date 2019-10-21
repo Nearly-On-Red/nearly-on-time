@@ -107,9 +107,7 @@ class AiringModule(mod.Module):
             self.log.info(data)
 
             for ep in data.airingSchedules:
-                airing_in_seconds = (
-                    dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()
-                ).seconds
+                airing_in_seconds = (dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()).total_seconds()
 
                 self.pending_announcements.append(mod.loop.call_later(airing_in_seconds, announce_episode(ep)))
 
