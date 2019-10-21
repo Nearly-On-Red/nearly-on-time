@@ -52,7 +52,7 @@ class AiringModule(mod.Module):
         self.next_check = dt.utcnow()
         self.session = None
         self.fetching_task = mod.loop.create_task(self.fetch_continuously())
-        self.pending_announcements = []
+        self.pending_announcements = {}
 
         self.channel = self.bot.get_channel(self.conf['channel_id'])
 
@@ -109,7 +109,8 @@ class AiringModule(mod.Module):
             for ep in data.airingSchedules:
                 airing_in_seconds = (dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()).total_seconds()
 
-                self.pending_announcements.append(mod.loop.call_later(airing_in_seconds, announce_episode(ep)))
+                handle = mod.loop.call_later(airing_in_seconds, announce_episode(ep))
+                self.pending_announcements[id(ep)] = handle
 
             if not data.pageInfo.hasNextPage:
                 break
@@ -129,6 +130,7 @@ class AiringModule(mod.Module):
             await asyncio.sleep(sleep_duration)
 
     async def announce_episode(self, ep):
+        del self.pending_announcements[id(ep)]
         channel = self.bot.get_channel(self.conf['channel_id'])
         
         if not channel:
