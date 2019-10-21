@@ -97,7 +97,7 @@ class AiringModule(mod.Module):
                     dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()
                 ).seconds
 
-                mod.loop.call_later(airing_in_seconds, announce_episode(ep))
+                self.pending_announcements.append(mod.loop.call_later(airing_in_seconds, announce_episode(ep)))
 
             if data.hasNextPage:
                 page_number += 1
