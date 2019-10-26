@@ -63,7 +63,7 @@ class AiringModule(mod.Module):
             self.log.info('Closing session...')
             mod.loop.create_task(self.session.close())
         
-        for ann in self.pending_announcements:
+        for ann in self.pending_announcements.values():
             ann.cancel()
 
     async def make_airing_query_request(self, after, before, page):
@@ -109,7 +109,7 @@ class AiringModule(mod.Module):
             for ep in data.airingSchedules:
                 airing_in_seconds = (dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()).total_seconds()
 
-                handle = mod.loop.call_later(airing_in_seconds, announce_episode(ep))
+                handle = mod.loop.call_later(airing_in_seconds, self.announce_episode(ep))
                 self.pending_announcements[id(ep)] = handle
 
             if not data.pageInfo.hasNextPage:
