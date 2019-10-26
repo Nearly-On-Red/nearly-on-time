@@ -6,8 +6,6 @@ It announces new anime episodes and events on Th8as website.
 ## Table of Contents
 - [Usage](#usage)
 - [Installation](#installation)
-- [Running](#running)
-- [Project Structure](#project-structure)
 
 ## Usage
 To use the bot, mention it with your command.
