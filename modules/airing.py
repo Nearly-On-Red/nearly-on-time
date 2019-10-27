@@ -109,7 +109,7 @@ class AiringModule(mod.Module):
             for ep in data.airingSchedules:
                 airing_in_seconds = (dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()).total_seconds()
 
-                handle = mod.loop.call_later(airing_in_seconds, self.announce_episode(ep))
+                handle = mod.loop.call_later(airing_in_seconds, self.announce_episode, ep)
                 self.pending_announcements[id(ep)] = handle
 
             if not data.pageInfo.hasNextPage:
