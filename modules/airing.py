@@ -107,10 +107,8 @@ class AiringModule(mod.Module):
             self.log.info(data)
 
             for ep in data.airingSchedules:
-                airing_in_seconds = (dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()).total_seconds()
-
-                handle = mod.loop.call_later(airing_in_seconds, self.announce_episode, ep)
-                self.pending_announcements[id(ep)] = handle
+                task = asyncio.create_task(self.announce_episode(ep))
+                self.pending_announcements[id(ep)] = task
 
             if not data.pageInfo.hasNextPage:
                 break
@@ -130,6 +128,9 @@ class AiringModule(mod.Module):
             await asyncio.sleep(sleep_duration)
 
     async def announce_episode(self, ep):
+        airing_in_seconds = (dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()).total_seconds()
+        await asyncio.sleep(airing_in_seconds)
+        
         anime = ep.media
         title = anime.title.english or anime.title.romaji
         number = ep.episode
