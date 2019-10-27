@@ -130,15 +130,18 @@ class AiringModule(mod.Module):
             await asyncio.sleep(sleep_duration)
 
     async def announce_episode(self, ep):
-        del self.pending_announcements[id(ep)]
-        channel = self.bot.get_channel(self.conf['channel_id'])
-        
-        if not channel:
-            self.log.warning(f'Announcement for {title} # {number} dropped, invalid channel {self.conf["channel_id"]}')
-
         anime = ep.media
         title = anime.title.english or anime.title.romaji
         number = ep.episode
+
+        channel = self.bot.get_channel(self.conf['channel_id'])
+
+        if channel:
+            self.log.info(f'Announcing {title} #{number}...')
+        
+        else:
+            self.log.warning(f'Announcement for {title} #{number} dropped, invalid channel {self.conf["channel_id"]}')
+
 
         link_list = [f'[[{link.site}]]({link.url})' for link in anime.externalLinks if link.site not in self.conf['blacklisted_sites']]
 
@@ -152,3 +155,5 @@ class AiringModule(mod.Module):
         embed.set_thumbnail(url=anime.coverImage.medium)
 
         await channel.send(embed=embed)
+
+        del self.pending_announcements[id(ep)]
