@@ -1,6 +1,6 @@
 import discord
 import inspect
-import datetime
+from datetime import datetime as dt, timezone as tz
 
 
 from ..common import *
@@ -77,4 +77,4 @@ class CoreModule(mod.Module):
 
     @mod.command(name='times', hidden=True, usage='times', description='Show uptime stats')
     async def times_cmd(self, ctx):
-        await ctx.send(f'```prolog\nFirst Ready: {self.bot.first_ready}\nLast Ready:  {self.bot.last_ready}\nLast Resume: {self.bot.last_resume}\nUptime:      {datetime.datetime.utcnow() - self.bot.first_ready}```')
+        await ctx.send(f'```prolog\nFirst Ready: {self.bot.first_ready}\nLast Ready:  {self.bot.last_ready}\nLast Resume: {self.bot.last_resume}\nUptime:      {dt.now(tz.utc) - self.bot.first_ready}```')

@@ -1,5 +1,5 @@
 import re
-import datetime
+from datetime import datetime as dt, timezone as tz
 import logging
 
 import discord.ext.commands as cmd
@@ -69,7 +69,7 @@ class NearlyOnTime(cmd.Bot):
     async def on_ready(self):
         log.info(f'Ready with Username {self.user.name!r}, ID {self.user.id!r}')
 
-        now = datetime.datetime.utcnow()
+        now = dt.now(tz.utc)
         if self.first_ready is None:
             self.first_ready = now
 
@@ -80,7 +80,7 @@ class NearlyOnTime(cmd.Bot):
 
     async def on_resumed(self):
         log.warning(f'Resumed')
-        self.last_resume = datetime.datetime.utcnow()
+        self.last_resume = dt.now(tz.utc)
 
     async def get_context(self, message, *, cls=cmd.Context):
         # This function is called internally by discord.py.

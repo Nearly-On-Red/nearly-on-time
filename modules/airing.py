@@ -1,7 +1,7 @@
 import asyncio
 import json
 import traceback
-from datetime import datetime as dt, timedelta as td
+from datetime import datetime as dt, timedelta as td, timezone as tz
 
 import aiohttp
 from discord import Embed
@@ -49,7 +49,7 @@ class AiringModule(mod.Module):
         self.conf.setdefault('refresh_interval_mins', 5)
         self.conf.sync()
 
-        self.next_check = dt.utcnow()
+        self.next_check = dt.now(tz.utc)
         self.session = None
         self.fetching_task = mod.loop.create_task(self.fetch_continuously())
         self.pending_announcements = {}
@@ -91,7 +91,7 @@ class AiringModule(mod.Module):
 
     async def fetch_upcoming_episodes(self):
         from_t = self.next_check
-        to_t = dt.utcnow() + td(minutes=self.conf['refresh_interval_mins'])
+        to_t = dt.now(tz.utc) + td(minutes=self.conf['refresh_interval_mins'])
 
         self.next_check = to_t
 
@@ -123,12 +123,12 @@ class AiringModule(mod.Module):
             except Exception:
                 traceback.print_exc()
     
-            sleep_duration = (self.next_check - dt.utcnow()).total_seconds()
+            sleep_duration = (self.next_check - dt.now(tz.utc)).total_seconds()
             self.log.info(f'Sleeping for {sleep_duration} seconds')
             await asyncio.sleep(sleep_duration)
 
     async def announce_episode(self, ep):
-        airing_in_seconds = (dt.utcfromtimestamp(ep.airingAt) - dt.utcnow()).total_seconds()
+        airing_in_seconds = (dt.fromtimestamp(ep.airingAt, tz.utc) - dt.now(tz.utc)).total_seconds()
         await asyncio.sleep(airing_in_seconds)
         
         anime = ep.media
@@ -151,7 +151,7 @@ class AiringModule(mod.Module):
             colour=channel.guild.me.color,
             url=anime.siteUrl,
             description=f'**{title}** Episode **{number}** just aired!\n\n' + ' '.join(link_list),
-            timestamp=dt.utcfromtimestamp(ep.airingAt))
+            timestamp=dt.fromtimestamp(ep.airingAt, tz.utc))
 
         embed.set_thumbnail(url=anime.coverImage.medium)
 
