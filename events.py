@@ -7,8 +7,8 @@ from datetime import datetime
 import discord
 from dateutil import tz
 
-from ..common import *
-from .. import module as mod
+from ...common import *
+from ... import module as mod
 
 
 Location = namedtuple('Location', 'url icon_url color')

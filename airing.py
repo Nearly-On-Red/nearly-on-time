@@ -6,8 +6,8 @@ from datetime import datetime as dt, timedelta as td, timezone as tz
 import aiohttp
 from discord import Embed
 
-from ..common import *
-from .. import module as mod
+from ...common import *
+from ... import module as mod
 
 
 get_airing_query = '''
