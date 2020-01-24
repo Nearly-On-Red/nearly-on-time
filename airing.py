@@ -54,8 +54,6 @@ class AiringModule(mod.Module):
         self.fetching_task = mod.loop.create_task(self.fetch_continuously())
         self.pending_announcements = {}
 
-        self.channel = self.bot.get_channel(self.conf['channel_id'])
-
     def on_unload(self):
         self.fetching_task.cancel()
         
