@@ -24,6 +24,10 @@ class SignupModule(mod.Module):
     mod.Module.listener(name='on_raw_reaction_add')(on_reaction_change)
     mod.Module.listener(name='on_raw_reaction_remove')(on_reaction_change)
 
+    @mod.Module.listener()
+    async def on_raw_message_delete(self, event):
+        if event.message_id in self.conf['posts']:
+            del self.conf['posts'][event.message_id]
 
     @mod.group(name='signup')
     async def signup_cmd(self, ctx):
