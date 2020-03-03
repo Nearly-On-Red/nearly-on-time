@@ -33,4 +33,5 @@ class SignupModule(mod.Module):
     async def create_cmd(self, ctx, role: discord.Role, emoji: str, *, message):
         msg = await ctx.send(embed=discord.Embed(color=getattr(ctx.me, 'color', 0), title=f'{role}: {message}', description=f'React with {emoji} to receive this role.'))
         self.conf['posts'][msg.id] = role.id
+        self.conf.sync()
         await msg.add_reaction(emoji)
