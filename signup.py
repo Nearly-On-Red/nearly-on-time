@@ -28,6 +28,7 @@ class SignupModule(mod.Module):
     async def on_raw_message_delete(self, event):
         if event.message_id in self.conf['posts']:
             del self.conf['posts'][event.message_id]
+            self.conf.sync()
 
     @mod.group(name='signup')
     async def signup_cmd(self, ctx):
