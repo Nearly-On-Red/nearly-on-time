@@ -1,7 +1,7 @@
 import asyncio
 import json
-import traceback
 from datetime import datetime as dt, timedelta as td, timezone as tz
+from collections import namedtuple
 
 import aiohttp
 from discord import Embed
@@ -41,6 +41,9 @@ query ($show_ids: [Int], $after: Int, $before: Int, $page: Int) {
 '''
 
 
+Episode = namedtuple('Episode', 'title info_url image links number time')
+
+
 class AiringModule(mod.Module):
     def on_load(self):
         self.conf.setdefault('channel_id', 0)
@@ -65,7 +68,7 @@ class AiringModule(mod.Module):
             ann.cancel()
 
     async def make_airing_query_request(self, after, before, page):
-        self.log.info(f'Fetching episodes from {after} to {before}...')
+        self.log.debug(f'Fetching episodes from {after} to {before}...')
         async with self.session.post('https://graphql.anilist.co', json={
             'query': get_airing_query,
             'variables': {
@@ -102,11 +105,23 @@ class AiringModule(mod.Module):
         page_number = 0
         while True:
             data = await self.make_airing_query_request(after=from_t, before=to_t, page=page_number)
-            self.log.info(data)
+            self.log.debug(data)
 
-            for ep in data.airingSchedules:
+            for episode_data in data.airingSchedules:
+                media = episode_data.media
+                ep = Episode(
+                    title=media.title.english or media.title.romaji,
+                    info_url=media.siteUrl,
+                    image=media.coverImage.medium,
+                    links=[(link.site, link.url) for link in media.externalLinks if link.site not in self.conf['blacklisted_sites']],
+                    number=episode_data.episode,
+                    time=dt.fromtimestamp(episode_data.airingAt, tz.utc),
+                )
+
                 task = asyncio.create_task(self.announce_episode(ep))
                 self.pending_announcements[id(ep)] = task
+
+                self.log.info(f'Scheduled {ep}')
 
             if not data.pageInfo.hasNextPage:
                 break
@@ -119,39 +134,36 @@ class AiringModule(mod.Module):
                 await self.fetch_upcoming_episodes()
             
             except Exception:
-                traceback.print_exc()
+                self.log.error('Exception while fetching', exc_info=True)
     
             sleep_duration = (self.next_check - dt.now(tz.utc)).total_seconds()
-            self.log.info(f'Sleeping for {sleep_duration} seconds')
+            self.log.debug(f'Sleeping for {sleep_duration} seconds')
             await asyncio.sleep(sleep_duration)
 
     async def announce_episode(self, ep):
-        airing_in_seconds = (dt.fromtimestamp(ep.airingAt, tz.utc) - dt.now(tz.utc)).total_seconds()
-        await asyncio.sleep(airing_in_seconds)
-        
-        anime = ep.media
-        title = anime.title.english or anime.title.romaji
-        number = ep.episode
+        # sleep until episode airs
+        await asyncio.sleep((ep.time - dt.now(tz.utc)).total_seconds())
 
         channel = self.bot.get_channel(self.conf['channel_id'])
 
         if channel:
-            self.log.info(f'Announcing {title} #{number}...')
+            self.log.info(f'Announcing {ep.title}#{ep.number}...')
         
         else:
-            self.log.warning(f'Announcement for {title} #{number} dropped, invalid channel {self.conf["channel_id"]}')
+            self.log.warning(f'Announcement for {ep.title}#{ep.number} dropped, invalid channel {self.conf["channel_id"]}')
 
 
-        link_list = [f'[[{link.site}]]({link.url})' for link in anime.externalLinks if link.site not in self.conf['blacklisted_sites']]
+        links = ' '.join(f'[[{name}]]({url})' for name, url in ep.links)
 
         embed = Embed(
-            title=f'New {title} Episode',
+            title=f'New {ep.title} Episode',
             colour=channel.guild.me.color,
-            url=anime.siteUrl,
-            description=f'**{title}** Episode **{number}** just aired!\n\n' + ' '.join(link_list),
-            timestamp=dt.fromtimestamp(ep.airingAt, tz.utc))
+            url=ep.info_url,
+            description=f'**{ep.title}** Episode **{ep.number}** just aired!\n\n{links}',
+            timestamp=ep.time,
+        )
 
-        embed.set_thumbnail(url=anime.coverImage.medium)
+        embed.set_thumbnail(url=ep.image)
 
         await channel.send(embed=embed)
 
