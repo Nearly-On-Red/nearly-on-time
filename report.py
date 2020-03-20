@@ -83,9 +83,6 @@ class ReportModule(mod.Module):
         self.conf.setdefault('reasons', {})
         self.conf.sync()
 
-        if len(self.conf['twitch_oauth_token']) == 0:
-            raise ValueError("Can't load reports without twitch login details")
-
         self.ml = MessageLogger(self)
         self.rr = ReportReciever(self)
 
