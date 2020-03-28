@@ -159,5 +159,3 @@ class AiringModule(mod.Module):
 
         else:
             log.error(f'Announcement for {ep.title}#{ep.number} dropped, invalid channel {self.conf["channel_id"]}')
-
-        return self.next_check
