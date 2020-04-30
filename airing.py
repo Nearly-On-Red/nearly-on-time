@@ -90,6 +90,9 @@ class AiringModule(mod.Module):
         self.conf['last_check'] = to_t
 
     async def fetch_upcoming_episodes(self, from_t, to_t):
+        if len(self.conf['shows']) == 0:
+            return []
+
         episodes = []
         page_number = 0
 
