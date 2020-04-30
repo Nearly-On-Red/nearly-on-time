@@ -81,7 +81,7 @@ class AiringModule(mod.Module):
                 break
 
             except (OSError, aiohttp.ClientError, asyncio.TimeoutError):
-                pubsub_log.info('Episode request failed, retrying...', exc_info=True)
+                log.info('Episode request failed, retrying...', exc_info=True)
                 await asyncio.sleep(backoff.delay())
 
         for ep in episodes:
