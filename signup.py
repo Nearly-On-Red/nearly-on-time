@@ -10,9 +10,9 @@ class SignupModule(mod.Module):
         self.conf.sync()
 
     async def on_reaction_change(self, event):
-        if event.message_id in self.conf['posts'] and event.user_id != self.bot.user.id:
+        if (event.channel_id, event.message_id) in self.conf['posts'] and event.user_id != self.bot.user.id:
             channel = self.bot.get_channel(event.channel_id)
-            role = channel.guild.get_role(self.conf['posts'][event.message_id])
+            role = channel.guild.get_role(self.conf['posts'][event.channel_id, event.message_id])
             member = channel.guild.get_member(event.user_id)
 
             if event.event_type == 'REACTION_ADD':
@@ -26,8 +26,8 @@ class SignupModule(mod.Module):
 
     @mod.Module.listener()
     async def on_raw_message_delete(self, event):
-        if event.message_id in self.conf['posts']:
-            del self.conf['posts'][event.message_id]
+        if (event.channel_id, event.message_id) in self.conf['posts']:
+            del self.conf['posts'][event.channel_id, event.message_id]
             self.conf.sync()
 
     @mod.group(name='signup')
@@ -37,6 +37,6 @@ class SignupModule(mod.Module):
     @signup_cmd.command(name='create')
     async def create_cmd(self, ctx, role: discord.Role, emoji: str, *, message):
         msg = await ctx.send(embed=discord.Embed(color=getattr(ctx.me, 'color', 0), title=f'{role}', description=f'{message}\n\n*React with {emoji} to receive this role.*'))
-        self.conf['posts'][msg.id] = role.id
+        self.conf['posts'][msg.channel.id, msg.id] = role.id
         self.conf.sync()
         await msg.add_reaction(emoji)
