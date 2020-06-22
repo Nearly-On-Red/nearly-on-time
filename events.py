@@ -36,7 +36,7 @@ class EventsModule(mod.Module):
         self.reload_events()
 
     @mod.group(name='events', invoke_without_command=True)
-    @is_superuser()
+    @mod.is_owner()
     async def events_cmd(self, ctx):
         await ctx.send(content="__***Upcoming Events:***__")
 
@@ -55,7 +55,7 @@ class EventsModule(mod.Module):
         
 
     @events_cmd.command(name='reload')
-    @is_superuser()
+    @mod.is_owner()
     async def reload_cmd(self, ctx):
         self.reload_events()
 
