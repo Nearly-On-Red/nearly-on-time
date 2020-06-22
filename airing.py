@@ -44,14 +44,19 @@ query ($show_ids: [Int], $from_t: Int, $to_t: Int, $page: Int) {
 '''
 
 
-Episode = namedtuple('Episode', 'title info_url image links number time')
+Episode = namedtuple('Episode', 'anilist_id title info_url image links number time')
+AnnouncementAction = namedtuple('AnnouncementAction', 'channel_id rename_pattern')
+
+def __repr__(self):
+    return super().__repr__ + id(self)
+
+AnnouncementAction.__repr__ = __repr__
 
 
 class AiringModule(mod.Module):
     def on_load(self):
-        self.conf.setdefault('channel_id', 0)
         self.conf.setdefault('blacklisted_sites', {'Official Site', 'Twitter'})
-        self.conf.setdefault('shows', set())
+        self.conf.setdefault('shows', {})
         self.conf.setdefault('refresh_interval_mins', 5)
         self.conf.setdefault('last_check', dt.now(tz.utc))
         self.conf.sync()
@@ -141,24 +146,31 @@ class AiringModule(mod.Module):
         return episodes
 
     async def announce_episode(self, ep):
-        channel = self.bot.get_channel(self.conf['channel_id'])
+        action = self.conf['shows'].get(ep.anilist_id)
+        if action is None:
+            log.warning(f'Announcement for {ep.title}#{ep.number} dropped, no action specified')
+            return
 
-        if channel:
-            log.info(f'Announcing {ep.title}#{ep.number}...')
-        
-            links = ' '.join(f'[[{name}]]({url})' for name, url in ep.links)
-
-            embed = Embed(
-                title=f'New {ep.title} Episode',
-                colour=channel.guild.me.color,
-                url=ep.info_url,
-                description=f'**{ep.title}** Episode **{ep.number}** just aired!\n\n{links}',
-                timestamp=ep.time,
-            )
-
-            embed.set_thumbnail(url=ep.image)
-
-            await channel.send(embed=embed)
-
-        else:
+        channel = self.bot.get_channel(action.channel_id)
+        if channel is None:
             log.error(f'Announcement for {ep.title}#{ep.number} dropped, invalid channel {self.conf["channel_id"]}')
+            return
+
+        log.info(f'Announcing {ep.title}#{ep.number}...')
+    
+        links = ' '.join(f'[[{name}]]({url})' for name, url in ep.links)
+
+        embed = Embed(
+            title=f'New {ep.title} Episode',
+            colour=channel.guild.me.color,
+            url=ep.info_url,
+            description=f'**{ep.title}** Episode **{ep.number}** just aired!\n\n{links}',
+            timestamp=ep.time,
+        )
+
+        embed.set_thumbnail(url=ep.image)
+
+        await channel.send(embed=embed)
+
+        if action.rename_pattern is not None:
+            await channel.edit(name=action.rename_pattern.format(ep=ep))
