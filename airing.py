@@ -128,6 +128,7 @@ class AiringModule(mod.Module):
             for episode_data in data.airingSchedules:
                 media = episode_data.media
                 ep = Episode(
+                    anilist_id=media.id,
                     title=media.title.english or media.title.romaji,
                     info_url=media.siteUrl,
                     image=media.coverImage.medium,
