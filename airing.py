@@ -47,11 +47,6 @@ query ($show_ids: [Int], $from_t: Int, $to_t: Int, $page: Int) {
 Episode = namedtuple('Episode', 'anilist_id title info_url image links number time')
 AnnouncementAction = namedtuple('AnnouncementAction', 'channel_id rename_pattern')
 
-def __repr__(self):
-    return super().__repr__ + id(self)
-
-AnnouncementAction.__repr__ = __repr__
-
 
 class AiringModule(mod.Module):
     def on_load(self):
