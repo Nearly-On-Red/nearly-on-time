@@ -16,7 +16,7 @@ class MailModule(mod.Module):
         self.conf.setdefault('allowed_user_ids', [])
         self.conf.sync()
 
-    @mod.group(name='mail')
+    @mod.group(name='mail', usage='mail', description='Creates a modmail channel for you, or links you to an existing one')
     async def mail_cmd(self, ctx):
         try:
             requesting_user = ctx.author
