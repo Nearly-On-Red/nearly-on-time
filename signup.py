@@ -34,10 +34,12 @@ class SignupModule(mod.Module):
             self.conf.sync()
 
     @mod.group(name='signup')
+    @mod.is_owner()
     async def signup_cmd(self, ctx):
         pass
 
     @signup_cmd.command(name='create')
+    @mod.is_owner()
     async def create_cmd(self, ctx, role: discord.Role, emoji: str, *, message):
         msg = await ctx.send(embed=discord.Embed(color=getattr(ctx.me, 'color', 0), title=f'{role}', description=f'{message}\n\n*React with {emoji} to receive this role.*'))
         self.conf['posts'][msg.channel.id, msg.id] = role.id
