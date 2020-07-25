@@ -33,7 +33,7 @@ class SignupModule(mod.Module):
             del self.conf['posts'][event.channel_id, event.message_id]
             self.conf.sync()
 
-    @mod.group(name='signup')
+    @mod.group(name='signup', hidden=True)
     @mod.is_owner()
     async def signup_cmd(self, ctx):
         pass
