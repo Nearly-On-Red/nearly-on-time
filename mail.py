@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime as dt, timedelta as td, timezone as tz
 
 import discord
 
@@ -12,6 +13,7 @@ log = mod.get_logger()
 class MailModule(mod.Module):
     def on_load(self):
         self.conf.setdefault('category_id', 0)
+        self.conf.setdefault('mention_role_id', 0)
         self.conf.setdefault('allowed_role_ids', [])
         self.conf.setdefault('allowed_user_ids', [])
         self.conf.sync()
@@ -61,16 +63,26 @@ class MailModule(mod.Module):
         guild = category.guild
 
         channel_name = f'{user.name}-{user.discriminator}'
-        return await category.create_text_channel(
+        channel = await category.create_text_channel(
             channel_name,
             overwrites={
                 guild.default_role: discord.PermissionOverwrite(read_messages=False),
                 **{
                     guild.get_member(id): discord.PermissionOverwrite(read_messages=True)
-                    for id in (user.id, *self.conf['allowed_user_ids'])
+                    for id in (user.id, ctx.me.id, *self.conf['allowed_user_ids'])
                 },
                 **{
                     guild.get_role(id): discord.PermissionOverwrite(read_messages=True)
                     for id in self.conf['allowed_role_ids']
                 },
             })
+
+        mention_role = ctx.guild.get_role(self.conf['mention_role_id'])
+
+        await channel.send(mention_role and mention_role.mention, embed=discord.Embed(
+            description=f'{user.mention} has opened a new mail channel.',
+            timestamp=dt.now(tz.utc))
+        )
+
+        return channel
+
