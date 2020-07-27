@@ -22,20 +22,20 @@ class MailModule(mod.Module):
             requesting_user = ctx.author
 
             if channel := await self.get_existing_channel(ctx, requesting_user):
-                msg = await ctx.send(embed=discord.Embed(
+                await ctx.send(embed=discord.Embed(
                     description=f'Your channel is {channel.mention}'
                 ))
 
             elif channel := await self.create_modmail_channel(ctx, requesting_user):  
-                    msg = await ctx.send(embed=discord.Embed(
-                        description=f'Your channel is {channel.mention}'
-                    ))
+                await ctx.send(embed=discord.Embed(
+                    description=f'Your channel is {channel.mention}'
+                ))
 
             else:
                 raise RuntimeError("Couldn't create or get channel.")
 
         except:
-            await msg.edit(embed=discord.Embed(
+            await ctx.send(embed=discord.Embed(
                 description=f'Sorry, an error has occured. Please notify hmry in DMs.'
             ))
             raise
