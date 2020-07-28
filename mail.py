@@ -23,12 +23,12 @@ class MailModule(mod.Module):
         try:
             requesting_user = ctx.author
 
-            if channel := await self.get_existing_channel(ctx, requesting_user):
+            if channel := await self.get_existing_channel(requesting_user):
                 await ctx.send(embed=discord.Embed(
                     description=f'Your channel is {channel.mention}'
                 ))
 
-            elif channel := await self.create_modmail_channel(ctx, requesting_user):  
+            elif channel := await self.create_modmail_channel(requesting_user):  
                 await ctx.send(embed=discord.Embed(
                     description=f'Your channel is {channel.mention}'
                 ))
@@ -42,7 +42,7 @@ class MailModule(mod.Module):
             ))
             raise
     
-    async def get_existing_channel(self, ctx, user):
+    async def get_existing_channel(self, user):
         category = self.bot.get_channel(self.conf['category_id'])
         
         if category is None:
@@ -53,7 +53,7 @@ class MailModule(mod.Module):
         return next((channel for channel in category.text_channels if channel.name == channel_name), None)
 
 
-    async def create_modmail_channel(self, ctx, user):
+    async def create_modmail_channel(self, user):
         category = self.bot.get_channel(self.conf['category_id'])
         
         if category is None:
@@ -69,7 +69,7 @@ class MailModule(mod.Module):
                 guild.default_role: discord.PermissionOverwrite(read_messages=False),
                 **{
                     guild.get_member(id): discord.PermissionOverwrite(read_messages=True)
-                    for id in (user.id, ctx.me.id, *self.conf['allowed_user_ids'])
+                    for id in (user.id, guild.me.id, *self.conf['allowed_user_ids'])
                 },
                 **{
                     guild.get_role(id): discord.PermissionOverwrite(read_messages=True)
@@ -77,7 +77,7 @@ class MailModule(mod.Module):
                 },
             })
 
-        mention_role = ctx.guild.get_role(self.conf['mention_role_id'])
+        mention_role = guild.get_role(self.conf['mention_role_id'])
 
         await channel.send(mention_role and mention_role.mention, embed=discord.Embed(
             description=f'{user.mention} has opened a new mail channel.',
