@@ -142,31 +142,32 @@ class AiringModule(mod.Module):
         return episodes
 
     async def announce_episode(self, ep):
-        action = self.conf['shows'].get(ep.anilist_id)
-        if action is None:
-            log.warning(f'Announcement for {ep.title}#{ep.number} dropped, no action specified')
-            return
+        actions = self.conf['shows'].get(ep.anilist_id)
 
-        channel = self.bot.get_channel(action.channel_id)
-        if channel is None:
-            log.error(f'Announcement for {ep.title}#{ep.number} dropped, invalid channel {self.conf["channel_id"]}')
-            return
+        if isinstance(actions, AnnouncementAction):
+            actions = (actions, )
 
         log.info(f'Announcing {ep.title}#{ep.number}...')
-    
-        links = ' '.join(f'[[{name}]]({url})' for name, url in ep.links)
 
-        embed = Embed(
-            title=f'New {ep.title} Episode',
-            colour=channel.guild.me.color,
-            url=ep.info_url,
-            description=f'**{ep.title}** Episode **{ep.number}** just aired!\n\n{links}',
-            timestamp=ep.time,
-        )
+        for action in actions:
+            channel = self.bot.get_channel(action.channel_id)
+            if channel is None:
+                log.error(f'Announcement for {ep.title}#{ep.number} dropped, invalid channel {self.conf["channel_id"]}')
+                return
+        
+            links = ' '.join(f'[[{name}]]({url})' for name, url in ep.links)
 
-        embed.set_thumbnail(url=ep.image)
+            embed = Embed(
+                title=f'New {ep.title} Episode',
+                colour=channel.guild.me.color,
+                url=ep.info_url,
+                description=f'**{ep.title}** Episode **{ep.number}** just aired!\n\n{links}',
+                timestamp=ep.time,
+            )
 
-        await channel.send(embed=embed)
+            embed.set_thumbnail(url=ep.image)
 
-        if action.rename_pattern is not None:
-            await channel.edit(name=action.rename_pattern.format(ep=ep))
+            await channel.send(embed=embed)
+
+            if action.rename_pattern is not None:
+                await channel.edit(name=action.rename_pattern.format(ep=ep))
