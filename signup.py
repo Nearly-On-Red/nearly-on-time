@@ -14,16 +14,15 @@ class SignupModule(mod.Module):
         if (event.channel_id, event.message_id) in self.conf['posts'] and event.user_id != self.bot.user.id:
             channel = self.bot.get_channel(event.channel_id)
             role = channel.guild.get_role(self.conf['posts'][event.channel_id, event.message_id])
-            member = channel.guild.get_member(event.user_id)
 
-            await member.add_roles(role, reason='Requested through bot')
+            await event.member.add_roles(role, reason='Requested through bot')
 
     @mod.Module.listener()
     async def on_raw_reaction_remove(self, event):
         if (event.channel_id, event.message_id) in self.conf['posts'] and event.user_id != self.bot.user.id:
             channel = self.bot.get_channel(event.channel_id)
             role = channel.guild.get_role(self.conf['posts'][event.channel_id, event.message_id])
-            member = channel.guild.get_member(event.user_id)
+            member = await channel.guild.fetch_member(event.user_id)
 
             await member.remove_roles(role, reason='Requested through bot')
 
