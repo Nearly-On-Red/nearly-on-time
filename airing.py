@@ -1,5 +1,6 @@
 import asyncio
 import json
+import string
 from datetime import datetime as dt, timedelta as td, timezone as tz
 from collections import namedtuple
 
@@ -46,6 +47,22 @@ query ($show_ids: [Int], $from_t: Int, $to_t: Int, $page: Int) {
 
 Episode = namedtuple('Episode', 'anilist_id title info_url image links number time')
 AnnouncementAction = namedtuple('AnnouncementAction', 'channel_id rename_pattern')
+
+
+class CustomFormatter(string.Formatter):
+    def format_field(self, value, format_spec):
+        if format_spec.startswith('offset'):
+            if (o := format_spec.find(':')) != -1:
+                offset = int(format_spec[6:o])
+                return self.format_field(value + offset, format_spec[o+1:])
+            
+            offset = int(format_spec[6:])
+            return format(value + offset)
+        
+        else:
+            return super().format_field(value, format_spec)
+
+fmt = CustomFormatter()
 
 
 class AiringModule(mod.Module):
@@ -170,4 +187,4 @@ class AiringModule(mod.Module):
             await channel.send(embed=embed)
 
             if action.rename_pattern is not None:
-                await channel.edit(name=action.rename_pattern.format(ep=ep))
+                await channel.edit(name=fmt.format(action.rename_pattern, ep=ep))
