@@ -1,13 +1,13 @@
 import asyncio
 import json
 import string
-from datetime import datetime as dt, timedelta as td, timezone as tz
+from datetime import datetime, timedelta, timezone
 from collections import namedtuple
 
 import aiohttp
 from discord import Embed
 
-from ...common import *
+from ...common import Obj
 from ... import module as mod
 
 
@@ -66,34 +66,30 @@ fmt = CustomFormatter()
 
 
 class AiringModule(mod.Module):
-    def on_load(self):
-        self.conf.setdefault('blacklisted_sites', {'Official Site', 'Twitter'})
-        self.conf.setdefault('shows', {})
-        self.conf.setdefault('refresh_interval_mins', 5)
-        self.conf.setdefault('last_check', dt.now(tz.utc))
-        self.conf.sync()
+    class Config(mod.Config):
+        blacklisted_sites: set[str] = {'Official Site', 'Twitter'}
+        shows: dict[int, AnnouncementAction] = {}
+        refresh_interval: timedelta = timedelta(minutes=5)
+        last_check: datetime = datetime.now(timezone.utc)
+    
+    async def on_load(self):
+        self.session = aiohttp.ClientSession()
+        log.info('Session opened')
 
-        self.session = None
-        self.schedule_repeated(self.schedule_episode_announcements, every_delta=td(minutes=self.conf['refresh_interval_mins']))
+        self.schedule_repeated(self.schedule_episode_announcements, every_delta=self.conf.refresh_interval)
 
-    def on_unload(self):
+    async def on_unload(self):
         if self.session:
             log.info('Closing session...')
-            asyncio.create_task(self.session.close())
+            await self.session.close()
 
     async def schedule_episode_announcements(self):
-        # We can only open sessions in a coroutine, so we do it here instead of on_load
-        if not self.session:
-            self.session = aiohttp.ClientSession()
-            log.info('Session opened')
-
         backoff = mod.ExponentialBackoff()
-
-        from_t = self.conf['last_check']
+        from_t = self.conf.last_check
 
         while True:
             try:
-                to_t = dt.now(tz.utc) + td(minutes=self.conf['refresh_interval_mins'])
+                to_t = datetime.now(timezone.utc) + self.conf.refresh_interval
                 episodes = await self.fetch_upcoming_episodes(from_t, to_t)
                 break
 
@@ -104,10 +100,11 @@ class AiringModule(mod.Module):
         for ep in episodes:
             self.schedule_task(self.announce_episode(ep), at_datetime=ep.time)
         
-        self.conf['last_check'] = to_t
+        self.conf.last_check = to_t
+        await self.conf.commit()
 
     async def fetch_upcoming_episodes(self, from_t, to_t):
-        if len(self.conf['shows']) == 0:
+        if len(self.conf.shows) == 0:
             return []
 
         episodes = []
@@ -119,9 +116,9 @@ class AiringModule(mod.Module):
             async with self.session.post('https://graphql.anilist.co', json={
                 'query': get_airing_query,
                 'variables': {
-                  'show_ids': list(self.conf['shows']),
-                  'from_t': int(dt.timestamp(from_t)),
-                  'to_t': int(dt.timestamp(to_t)) + 1,
+                  'show_ids': list(self.conf.shows),
+                  'from_t': int(datetime.timestamp(from_t)),
+                  'to_t': int(datetime.timestamp(to_t)) + 1,
                   'page': page_number
                 }
             }, timeout=aiohttp.ClientTimeout(total=10)) as response:
@@ -144,9 +141,9 @@ class AiringModule(mod.Module):
                     title=media.title.english or media.title.romaji,
                     info_url=media.siteUrl,
                     image=media.coverImage.medium,
-                    links=[(link.site, link.url) for link in media.externalLinks if link.site not in self.conf['blacklisted_sites']],
+                    links=[(link.site, link.url) for link in media.externalLinks if link.site not in self.conf.blacklisted_sites],
                     number=episode_data.episode,
-                    time=dt.fromtimestamp(episode_data.airingAt, tz.utc),
+                    time=datetime.fromtimestamp(episode_data.airingAt, timezone.utc),
                 )
 
                 episodes.append(ep)
@@ -159,7 +156,7 @@ class AiringModule(mod.Module):
         return episodes
 
     async def announce_episode(self, ep):
-        actions = self.conf['shows'].get(ep.anilist_id)
+        actions = self.conf.shows.get(ep.anilist_id)
 
         if isinstance(actions, AnnouncementAction):
             actions = (actions, )
@@ -169,7 +166,7 @@ class AiringModule(mod.Module):
         for action in actions:
             channel = self.bot.get_channel(action.channel_id)
             if channel is None:
-                log.error(f'Announcement for {ep.title}#{ep.number} dropped, invalid channel {self.conf["channel_id"]}')
+                log.error(f'Announcement for {ep.title}#{ep.number} dropped, invalid channel {action.channel_id}')
                 return
         
             links = ' '.join(f'[[{name}]]({url})' for name, url in ep.links)
