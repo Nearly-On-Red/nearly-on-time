@@ -181,7 +181,8 @@ class AiringModule(mod.Module):
 
             embed.set_thumbnail(url=ep.image)
 
-            await channel.send(embed=embed)
+            message = await channel.send(embed=embed)
+            await message.pin()
 
             if action.rename_pattern is not None:
                 await channel.edit(name=fmt.format(action.rename_pattern, ep=ep))
