@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from collections import namedtuple
 
 import aiohttp
-from discord import Embed
+from discord import Embed, MessageType
 
 from ...common import Obj
 from ... import module as mod
@@ -186,3 +186,16 @@ class AiringModule(mod.Module):
 
             if action.rename_pattern is not None:
                 await channel.edit(name=fmt.format(action.rename_pattern, ep=ep))
+
+    # Delete any "X pinned a message to this channel" messages that happen from the bot pinning its own messages
+    @mod.Module.listener()
+    async def on_message(self, msg):
+        if msg.type is MessageType.pins_add:
+            if msg.author == self.bot.user:
+                pinned_message = msg.reference.resolved
+                if pinned_message is None:
+                    channel = self.bot.get_channel(msg.reference.channel_id)
+                    pinned_message = await channel.fetch_message(msg.reference.message_id)
+            
+                if pinned_message.author == self.bot.user:
+                    await msg.delete()
